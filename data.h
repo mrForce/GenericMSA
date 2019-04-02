@@ -44,3 +44,9 @@ typedef struct Data_ {
   Dimensionality dimensions;
   ScoringMatrix scores;
 } Data;
+
+typedef struct DP_ {
+  double score;
+  size_t backtrack_index;
+  char backtrack_set;
+} DP_element;
