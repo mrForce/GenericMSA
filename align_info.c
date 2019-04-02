@@ -62,7 +62,7 @@ double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* 
     }else{
       /*
 	Since we use 0 to indicate a gap, 
-       */
+ */
       new_point.coordinates[i] = next_point_coordinates[i] + 1;
     }
   }
@@ -74,7 +74,30 @@ double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* 
   return score;
 }
 
-DPTable* initialize_dp_table(size_t num_dimensions, size_t length){
+char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_length){
+  /*
+    This tells us if a location in the table is valid. 
+
+    A location is invalid if the number of gaps inserted into one of the sequences is more than is allowed. That is, alignment_length - num_gaps > sequence_size. We get the number of gaps inserted by subtracting the index of the dimension from the maximum index of all the dimensions in the point. 
+
+    (this limits the # of gaps, but is it possible to not have enough gaps? I don't think so).    
+   */
+  size_t max_coordinate = 0;
+  for(size_t i = 0; i < point->dimensions->num_dimensions; i++){
+    if(point->coordinates[i] > max_coordinate){
+      max_coordinate = point->coordinates[i];
+    }
+  }
+  for(size_t i = 0; i < point->dimensions->num_dimensions; i++){
+    size_t num_gaps = max_coordinate - point->coordinates[i];
+    if(num_gaps + point->coordinates[i] > sequence_sizes[i]){
+      return 0;
+    }       
+  }
+  return 1;
+}
+
+DPTable* initialize_dp_table(size_t num_dimensions, size_t length, ScoringMatrix* scoring){
   /*
     Length is really the target length. 
    */
@@ -88,10 +111,17 @@ DPTable* initialize_dp_table(size_t num_dimensions, size_t length){
   table->dimensions.num_dimensions = num_dimensions;
   table->elements = (DPElement*) malloc(sizeof(DPElement)*num_dimensions*length);
   for(size_t i = 0; i < num_dimensions*length; i++){
-    table->elements[i].score = 0;
+    table->elements[i].score = 0;    
     table->elements[i].backtrack.array = NULL;
+    table->elements[i].valid = 0;
     table->elements[i].backtrack.num_elements = 0;
     table->elements[i].backtrack.capacity = 0;
   }
+  /*
+    Need to fill in the sides of the matrix.
+   */
+  
+  
+  
   return table;
 }
