@@ -1,0 +1,3 @@
+This is basically a generic-ized Multiple Sequence Aligner, where it inserts gaps into each sequence to pad it to a pre-specified length. You have to specify the score matrix (not a substituation matrix, but the score of each possible call to the scoring function!).
+
+I've made zero attempt to optimize it. I'm aligning 6 "sequences" to be of length 13 for a class project, and I don't care how long it takes to run.
