@@ -10,6 +10,10 @@ typedef struct BacktrackStore_{
 
 
 
+typedef struct Dimensionality_{
+  size_t* dimension_sizes;
+  size_t num_dimensions;
+} Dimensionality;
 
 
 typedef struct ScoringMatrix_ {
@@ -18,10 +22,6 @@ typedef struct ScoringMatrix_ {
   Dimensionality dimensions;
 } ScoringMatrix;
 
-typedef struct Dimensionality_{
-  size_t* dimension_sizes;
-  size_t num_dimensions;
-} Dimensionality;
 
 typedef struct Point_{
   size_t* coordinates;
@@ -45,7 +45,10 @@ typedef struct DPElement_ {
 
 typedef struct DPTable_{
   DPElement* elements;
+  size_t num_elements;
   Dimensionality dimensions;
+  //go from 1 up to BUT NOT including recursion_limit.
+  unsigned int recursion_limit;
 } DPTable;
 
 
@@ -64,6 +67,8 @@ typedef struct Alignments_{
 
 void add_to_backtrackstore(BacktrackStore* store, size_t index);
 size_t point_to_index(Point* point);
+char index_to_point(size_t index, Dimensionality* dimensions, Point* p);
 double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* next_point_coordinates);
 char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_length);
 DPTable* initialize_dp_table(size_t num_dimensions, size_t length, ScoringMatrix* scoring);
+Point get_recurse_point(unsigned int bits, size_t* coordinates, size_t coordinates_size);

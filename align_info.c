@@ -43,6 +43,23 @@ size_t point_to_index(Point* point){
   return offset;
 }
 
+void index_to_point(size_t index, Dimensionality* dimensions, Point* p){
+  /*
+    The formula for point to index is:
+
+    n_d + N_d*(n_{d - 1} + N_{d - 1}(n_{d - 2} + N_{d - 2}(...)))
+
+    So, to get n_d, we take index % N_d. Then, we divide the index by N_d, which gives is the next term n_{d - 1} + N_{d - 1}(n_{d - 2} + N_{d - 2}(...))
+   */
+  size_t n, next_term, num_dimensions = dimensions->num_dimensions;
+  size_t n, next_term = index;
+  for(i = num_dimensions - 1; i >= 0; i++){
+    p->coordinates[i] = next_term % dimensions->dimension_sizes[i];
+    assert(p->coordinates[i] < dimensions->dimension_sizes[i]);
+    next_term = next_term/dimensions->dimension_sizes[i];
+  }
+  return point;
+}
 
 double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* next_point_coordinates){
   /*
@@ -62,7 +79,7 @@ double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* 
     }else{
       /*
 	Since we use 0 to indicate a gap, 
- */
+      */
       new_point.coordinates[i] = next_point_coordinates[i] + 1;
     }
   }
@@ -97,20 +114,21 @@ char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_lengt
   return 1;
 }
 
-DPTable* initialize_dp_table(size_t num_dimensions, size_t length, ScoringMatrix* scoring){
+DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringMatrix* scoring){
+  assert(sizeof(int) == 4);
+  assert(dimensions->num_dimensions <= 32);
   /*
-    Length is really the target length. 
+    We want an unsigned int that's 2^{num_dimensions}
    */
-  assert(num_dimensions >= 2);
-  assert(length > 1);
-  DPTable* table = (DPTable*) malloc(sizeof(DPTable));
-  size_t* dimensions = (size_t*) malloc(sizeof(size_t)*num_dimensions);
+  unsigned int recursion_limit = 0;
   for(size_t i = 0; i < num_dimensions; i++){
-    dimensions[i] = length;
+    num_elements *= dimensions->dimension_sizes[i];
+    recursion_limit *= 2;
   }
-  table->dimensions.num_dimensions = num_dimensions;
-  table->elements = (DPElement*) malloc(sizeof(DPElement)*num_dimensions*length);
-  for(size_t i = 0; i < num_dimensions*length; i++){
+  table->recursion_limit = recursion_limit;
+  table->elements = (DPElement*) malloc(sizeof(DPElement)*num_elements);
+  table->num_elements = num_elements;
+  for(size_t i = 0; i < num_elements; i++){
     table->elements[i].score = 0;    
     table->elements[i].backtrack.array = NULL;
     table->elements[i].valid = 0;
@@ -118,10 +136,40 @@ DPTable* initialize_dp_table(size_t num_dimensions, size_t length, ScoringMatrix
     table->elements[i].backtrack.capacity = 0;
   }
   /*
-    Need to fill in the sides of the matrix.
+    Fill in element (0, 0, ..., 0) of the table. It has index 0.
+  */
+  table->elements[0].valid = 1;
+  Point score_point;
+  score_point.dimensions = &(scoring->dimensions);
+  size_t* coordinates = (size_t*) malloc(scoring->dimensions.num_dimensions);
+  /*
+    Calculate the index in the scoring matrix we need.
    */
-  
-  
-  
+  for(size_t i = 0; i < scoring->dimensions.num_dimensions; i++){
+    coordinates[i] = 1;
+  }
+  score_point.coordinates = coordinates;
+  size_t score_index = point_to_index(&score_point);
+  table->elements[0].score = scoring->scores[score_index];
   return table;
+}
+
+char get_recurse_point(unsigned int bits, size_t* coordinates, size_t* new_coordinates, size_t coordinates_size){
+  /*
+    Returns 0 if one of the elements of new_coordinates is negative.
+    Returns 1 otherwise.
+   */
+  for(unsigned int i = 0; i < coordinates_size; i++){
+    assert(coordinates[i] >= 0);
+    if(bits & (1 << i)){      
+      //then we need to subtract 1
+      new_coordinates[i] = coordinates[i] - 1;
+      if(coordinates[i] < 0){
+	return 0;
+      }      
+    }else{
+      new_coordinates[i] = coordinates[i];
+    }
+  }
+  return 1;
 }
