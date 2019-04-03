@@ -13,12 +13,12 @@ void add_to_alignments(BacktrackResult* result, Alignments* alignments){
       //rounding
       new_cap++;
     }
-    alignments->alignments = (BacktrackResult**) realloc(alignments->alignments, new_capy*sizeof(BacktrackResult*));
+    alignments->alignments = (BacktrackResult**) realloc(alignments->alignments, new_cap*sizeof(BacktrackResult*));
     alignments->capacity = new_cap;
   }
   assert(alignments->capacity > 0 && alignments->capacity > alignments->num_alignments);
   assert(alignments->alignments != NULL);
-  alignments->alignments[alignments->num_alignments] = index;
+  alignments->alignments[alignments->num_alignments] = result;
   alignments->num_alignments++;
 }
 
@@ -36,7 +36,7 @@ void add_to_backtrackstore(BacktrackStore* store, size_t index){
       new_capacity++;
     }
     store->array = (size_t*) realloc(store->array, new_capacity*sizeof(size_t));
-    store->capacity = new_capacity
+    store->capacity = new_capacity;
   }
   assert(store->capacity > 0 && store->capacity > store->num_elements);
   assert(store->array != NULL);
@@ -49,7 +49,6 @@ BacktrackResult* duplicate_backtrack_result_add_space(BacktrackResult* result){
     Returns a copy of result, except it adds an entry for another Point*, and increases num_points by 1.
    */
   BacktrackResult* new_result = (BacktrackResult*) malloc(sizeof(BacktrackResult));
-  new_result->score = result->score;
   new_result->num_points = result->num_points + 1;
   new_result->points = (Point**) malloc(sizeof(Point*)*(result->num_points + 1));
   if(result->num_points > 0){
@@ -89,9 +88,8 @@ void index_to_point(size_t index, Dimensionality* dimensions, Point* p){
 
     So, to get n_d, we take index % N_d. Then, we divide the index by N_d, which gives is the next term n_{d - 1} + N_{d - 1}(n_{d - 2} + N_{d - 2}(...))
    */
-  size_t n, next_term, num_dimensions = dimensions->num_dimensions;
-  size_t n, next_term = index;
-  for(i = num_dimensions - 1; i >= 0; i++){
+  size_t n, next_term = index, num_dimensions = dimensions->num_dimensions;
+  for(size_t i = num_dimensions - 1; i >= 0; i++){
     p->coordinates[i] = next_term % dimensions->dimension_sizes[i];
     assert(p->coordinates[i] < dimensions->dimension_sizes[i]);
     next_term = next_term/dimensions->dimension_sizes[i];
@@ -120,7 +118,7 @@ double evaluate_move(ScoringFunction* score_func, Point* current_point, size_t* 
     }
   }
   
-  double score = score_func->score(score_funct->data, coordinates, num_dimensions);
+  double score = score_func->score(score_func->data, coordinates, num_dimensions);
   return score;
 }
 
@@ -154,10 +152,12 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scorin
     We want an unsigned int that's 2^{num_dimensions}
    */
   unsigned int recursion_limit = 0;
-  for(size_t i = 0; i < num_dimensions; i++){
+  size_t num_elements = 1;
+  for(size_t i = 0; i < dimensions->num_dimensions; i++){
     num_elements *= dimensions->dimension_sizes[i];
     recursion_limit *= 2;
   }
+  DPTable* table = (DPTable*) malloc(sizeof(DPTable));
   table->recursion_limit = recursion_limit;
   table->elements = (DPElement*) malloc(sizeof(DPElement)*num_elements);
   table->num_elements = num_elements;
@@ -172,14 +172,14 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scorin
     Fill in element (0, 0, ..., 0) of the table. It has index 0.
   */
   table->elements[0].valid = 1;
-  size_t coordinates[dimensions.num_dimensions];
+  size_t coordinates[dimensions->num_dimensions];
   /*
     Calculate the index in the scoring matrix we need.
    */
-  for(size_t i = 0; i < dimensions.num_dimensions; i++){
+  for(size_t i = 0; i < dimensions->num_dimensions; i++){
     coordinates[i] = 1;
   }
-  table->elements[0].score = scoring->score(scoring->data, coordinates, dimensions.num_dimensions);
+  table->elements[0].score = scoring->score(scoring->data, coordinates, dimensions->num_dimensions);
   return table;
 }
 

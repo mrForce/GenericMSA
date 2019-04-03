@@ -8,3 +8,6 @@ OBJ = align_info.o align.o
 
 align: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
+
+clean:
+	rm *.c align

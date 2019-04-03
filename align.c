@@ -9,32 +9,32 @@ void backtrack(Alignments* alignments, DPTable* table, BacktrackResult* parent_r
   p->coordinates = (size_t*) malloc(sizeof(size_t)*(table->dimensions.num_dimensions));
   index_to_point(index, &(table->dimensions), p);
   BacktrackResult* new_result = duplicate_backtrack_result_add_space(parent_result);
-  new_result[parent_result->num_points] = p;
+  new_result->points[parent_result->num_points] = p;
   if(index == 0){
     add_to_alignments(new_result, alignments);
   }else{
-    DPElement element = DPTable->elements[index];
+    DPElement element = table->elements[index];
     assert(element.valid);
     BacktrackStore backtracks = element.backtrack;
     assert(backtracks.num_elements > 0);
     assert(backtracks.array);
     for(size_t i = 0; i < backtracks.num_elements; i++){
-      backtrack(alignments, table, new_result, point_to_index(backtracks[i]));
+      backtrack(alignments, table, new_result, backtracks.array[i]);
     }
     //since we copied it in the next backtrack call, we don't need it anymore.
     free(new_result);
   }
 }
 
-Alignments* run_alignment(ScoringMatrix* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences){
+Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences){
   /*
     Note: for each element in sequence_sizes, alignment_length - sequences_size is the number of gaps that need to be inserted into it.
 
   */
-  Dimensionality dp_dimensions;
-  dp_dimensions.num_dimensions = num_sequences;
-  dp_dimensions.dimension_sizes = sequence_sizes;
-  DPTable* table = initialize_dp_table(&dp_dimensions, scoring);
+  Dimensionality* dp_dimensions = (Dimensionality*) malloc(sizeof(Dimensionality));
+  dp_dimensions->num_dimensions = num_sequences;
+  dp_dimensions->dimension_sizes = sequence_sizes;
+  DPTable* table = initialize_dp_table(dp_dimensions, scoring);
   /*
     When we recurse, do this.
    */
@@ -70,12 +70,12 @@ Alignments* run_alignment(ScoringMatrix* scoring, size_t alignment_length, size_
 	  temp_point.coordinates = temp_coordinates;
 	  temp_point.dimensions = dp_dimensions;
 	  size_t temp_index = point_to_index(&temp_point);
-	  if(dp_table->elements[temp_index].valid){
+	  if(table->elements[temp_index].valid){
 	    /*
 	      We add the score stored in the element to the one calculated by evaluate_move
 	     */
 	    valid_indices[j - 1] = 1;
-	    double temp_score = dp_table->elements[temp_index].score + evaluate_move(scoring, &point, temp_coordinates);
+	    double temp_score = table->elements[temp_index].score + evaluate_move(scoring, &point, temp_coordinates);
 	    scores[j - 1] = temp_score;
 	    temp_indices[j - 1] = temp_index;
 	  }else{
