@@ -1,0 +1,3 @@
+/*
+  The average pairwise distance of a bunch of points
+ */
