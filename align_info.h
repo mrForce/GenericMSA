@@ -17,11 +17,11 @@ typedef struct Dimensionality_{
 } Dimensionality;
 
 
-typedef struct ScoringMatrix_ {
-  double* scores;
-  size_t n;
-  Dimensionality dimensions;
-} ScoringMatrix;
+typedef struct ScoringFunction_{
+  double (*score)(void*, size_t*, size_t);
+  void* data;
+} ScoringFunction;
+
 
 
 typedef struct Point_{
@@ -32,10 +32,6 @@ typedef struct Point_{
 
 
 
-typedef struct Data_ {
-  Dimensionality dimensions;
-  ScoringMatrix scores;
-} Data;
 
 typedef struct DPElement_ {
   char valid;
@@ -67,11 +63,11 @@ typedef struct Alignments_{
 
 
 
-void add_to_backtrackstore(BacktrackStore* store, size_t index);
-BacktrackResult* duplicate_backtrack_result_add_space(BacktrackResult* result);
-size_t point_to_index(Point* point);
-void index_to_point(size_t index, Dimensionality* dimensions, Point* p);
-double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* next_point_coordinates);
-char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_length);
-DPTable* initialize_dp_table(size_t num_dimensions, size_t length, ScoringMatrix* scoring);
-Point get_recurse_point(unsigned int bits, size_t* coordinates, size_t coordinates_size);
+void add_to_backtrackstore(BacktrackStore*, size_t);
+BacktrackResult* duplicate_backtrack_result_add_space(BacktrackResult*);
+size_t point_to_index(Point*);
+void index_to_point(size_t, Dimensionality*, Point*);
+double evaluate_move(ScoringFunction*, Point*, size_t*);
+char location_valid(size_t*, Point*, size_t);
+DPTable* initialize_dp_table(Dimensionality*, ScoringFunction*);
+Point get_recurse_point(unsigned int, size_t*, size_t*, size_t);

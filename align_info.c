@@ -98,33 +98,29 @@ void index_to_point(size_t index, Dimensionality* dimensions, Point* p){
   }
 }
 
-double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* next_point_coordinates){
+double evaluate_move(ScoringFunction* score_func, Point* current_point, size_t* next_point_coordinates){
   /*
     Considering moving from current_point to next_point_coordinates.
    */
-  Point new_point;
-  assert(score_matrix->dimensions->num_dimensions == current_point->dimensions->num_dimensions);
+
+
   size_t num_dimensions = current_point->dimensions->num_dimensions;
   size_t coordinates[num_dimensions];
-  new_point.coordinates = coordinates;
-  new_point.dimensions = score_matrix->dimensions;
+
   for(size_t i = 0; i < num_dimensions; i++){
     assert(current_point->coordinates[i] >= next_point_coordinates[i]);
     if(current_point->coordinates[i] == next_point_coordinates[i]){
       //then gap.
-      new_point.coordinates[i] = 0;
+      coordinates[i] = 0;
     }else{
       /*
 	Since we use 0 to indicate a gap, 
       */
-      new_point.coordinates[i] = next_point_coordinates[i] + 1;
+      coordinates[i] = next_point_coordinates[i] + 1;
     }
   }
   
-  size_t score_index = point_to_index(&new_point);
-  
-  assert(index < score_matrix->n);
-  double score = score_matrix->scores[index];
+  double score = score_func->score(score_funct->data, coordinates, num_dimensions);
   return score;
 }
 
@@ -151,7 +147,7 @@ char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_lengt
   return 1;
 }
 
-DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringMatrix* scoring){
+DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scoring){
   assert(sizeof(int) == 4);
   assert(dimensions->num_dimensions <= 32);
   /*
@@ -176,18 +172,14 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringMatrix* scoring)
     Fill in element (0, 0, ..., 0) of the table. It has index 0.
   */
   table->elements[0].valid = 1;
-  Point score_point;
-  score_point.dimensions = &(scoring->dimensions);
-  size_t* coordinates = (size_t*) malloc(scoring->dimensions.num_dimensions);
+  size_t coordinates[dimensions.num_dimensions];
   /*
     Calculate the index in the scoring matrix we need.
    */
-  for(size_t i = 0; i < scoring->dimensions.num_dimensions; i++){
+  for(size_t i = 0; i < dimensions.num_dimensions; i++){
     coordinates[i] = 1;
   }
-  score_point.coordinates = coordinates;
-  size_t score_index = point_to_index(&score_point);
-  table->elements[0].score = scoring->scores[score_index];
+  table->elements[0].score = scoring->score(scoring->data, coordinates, dimensions.num_dimensions);
   return table;
 }
 
