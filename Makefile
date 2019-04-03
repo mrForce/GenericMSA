@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I.
+CFLAGS=-I. -lm
 DEPS = align_info.h
 OBJ = align_info.o align.o 
 
@@ -10,4 +10,4 @@ align: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 clean:
-	rm *.c align
+	rm *.o align

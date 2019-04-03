@@ -1,5 +1,28 @@
-#include "align_info.h"
+#include "align.h"
 #include <math.h>
+
+void add_to_alignments(BacktrackResult* result, Alignments* alignments){
+  if(alignments->capacity == 0){
+    assert(alignments->alignments == NULL);
+    alignments->alignments = (BacktrackResult**) malloc(sizeof(BacktrackResult*));
+    alignments->capacity = 1;
+    alignments->num_alignments = 0;
+  }else if(alignments->num_alignments == alignments->capacity){
+    assert(alignments->alignments != NULL);
+    size_t new_cap = 1.5*alignments->num_alignments;
+    if(new_cap == alignments->num_alignments){
+      //rounding
+      new_cap++;
+    }
+    alignments->alignments = (BacktrackResult**) realloc(alignments->alignments, new_cap*sizeof(BacktrackResult*));
+    alignments->capacity = new_cap;
+  }
+  assert(alignments->capacity > 0 && alignments->capacity > alignments->num_alignments);
+  assert(alignments->alignments != NULL);
+  alignments->alignments[alignments->num_alignments] = result;
+  alignments->num_alignments++;
+}
+
 void backtrack(Alignments*, DPTable*, BacktrackResult*, size_t);
 
 void backtrack(Alignments* alignments, DPTable* table, BacktrackResult* parent_result, size_t index){
@@ -128,4 +151,8 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
   starting_result.num_points = 0;
   backtrack(alignments, table, &starting_result, table->num_elements - 1);
   return alignments;
+}
+
+int main(){
+  return 0;
 }

@@ -1,26 +1,6 @@
 #include "align_info.h"
 
-void add_to_alignments(BacktrackResult* result, Alignments* alignments){
-  if(alignments->capacity == 0){
-    assert(alignments->alignments == NULL);
-    alignments->alignments = (BacktrackResult**) malloc(sizeof(BacktrackResult*));
-    alignments->capacity = 1;
-    alignments->num_alignments = 0;
-  }else if(alignments->num_alignments == alignments->capacity){
-    assert(alignments->alignments != NULL);
-    size_t new_cap = 1.5*alignments->num_alignments;
-    if(new_cap == alignments->num_alignments){
-      //rounding
-      new_cap++;
-    }
-    alignments->alignments = (BacktrackResult**) realloc(alignments->alignments, new_cap*sizeof(BacktrackResult*));
-    alignments->capacity = new_cap;
-  }
-  assert(alignments->capacity > 0 && alignments->capacity > alignments->num_alignments);
-  assert(alignments->alignments != NULL);
-  alignments->alignments[alignments->num_alignments] = result;
-  alignments->num_alignments++;
-}
+
 
 void add_to_backtrackstore(BacktrackStore* store, size_t index){
   if(store->capacity == 0){

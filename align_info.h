@@ -63,6 +63,9 @@ typedef struct Alignments_{
 
 
 
+
+
+
 void add_to_backtrackstore(BacktrackStore*, size_t);
 void add_to_alignments(BacktrackResult*, Alignments*);
 BacktrackResult* duplicate_backtrack_result_add_space(BacktrackResult*);
