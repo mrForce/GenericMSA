@@ -1,11 +1,33 @@
 #include "align_info.h"
 
+void add_to_alignments(BacktrackResult* result, Alignments* alignments){
+  if(alignments->capacity == 0){
+    assert(alignments->alignments == NULL);
+    alignments->alignments = (BacktrackResult**) malloc(sizeof(BacktrackResult*));
+    alignments->capacity = 1;
+    alignments->num_alignments = 0;
+  }else if(alignments->num_alignments == alignments->capacity){
+    assert(alignments->alignments != NULL);
+    size_t new_cap = 1.5*alignments->num_alignments;
+    if(new_cap == alignments->num_alignments){
+      //rounding
+      new_cap++;
+    }
+    alignments->alignments = (BacktrackResult**) realloc(alignments->alignments, new_capy*sizeof(BacktrackResult*));
+    alignments->capacity = new_cap;
+  }
+  assert(alignments->capacity > 0 && alignments->capacity > alignments->num_alignments);
+  assert(alignments->alignments != NULL);
+  alignments->alignments[alignments->num_alignments] = index;
+  alignments->num_alignments++;
+}
+
 void add_to_backtrackstore(BacktrackStore* store, size_t index){
   if(store->capacity == 0){
     assert(store->array == NULL);
     store->array = (size_t*) malloc(sizeof(size_t));
     store->num_elements = 0;
-    store->capacity = 0;
+    store->capacity = 1;
   }else if(store->num_elements == store->capacity){
     assert(store->array != NULL);
     size_t new_capacity = 1.5*store->num_elements;
@@ -21,6 +43,22 @@ void add_to_backtrackstore(BacktrackStore* store, size_t index){
   store->array[store->num_elements] = index;
   store->num_elements++;
 }
+
+BacktrackResult* duplicate_backtrack_result_add_space(BacktrackResult* result){
+  /*
+    Returns a copy of result, except it adds an entry for another Point*, and increases num_points by 1.
+   */
+  BacktrackResult* new_result = (BacktrackResult*) malloc(sizeof(BacktrackResult));
+  new_result->score = result->score;
+  new_result->num_points = result->num_points + 1;
+  new_result->points = (Point**) malloc(sizeof(Point*)*(result->num_points + 1));
+  if(result->num_points > 0){
+    memcpy(new_result->points, result->points, sizeof(Point*)*(result->num_points));
+  }
+  new_result->points[result->num_points] = NULL;
+  return new_result;
+}
+
 
 size_t point_to_index(Point* point){
   /*
@@ -58,7 +96,6 @@ void index_to_point(size_t index, Dimensionality* dimensions, Point* p){
     assert(p->coordinates[i] < dimensions->dimension_sizes[i]);
     next_term = next_term/dimensions->dimension_sizes[i];
   }
-  return point;
 }
 
 double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* next_point_coordinates){

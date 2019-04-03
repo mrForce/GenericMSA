@@ -3,6 +3,7 @@
 
 
 typedef struct BacktrackStore_{
+  
   size_t* array;
   size_t num_elements;
   size_t capacity;
@@ -53,21 +54,23 @@ typedef struct DPTable_{
 
 
 typedef struct BacktrackResult_{
-  double score;
-  Point* points;
+  Point** points;
   size_t num_points;
 } BacktrackResult;
 
 typedef struct Alignments_{
-  BacktrackResult* alignments;
+  double score;
+  BacktrackResult** alignments;
   size_t num_alignments;
+  size_t capacity;
 } Alignments;
 
 
 
 void add_to_backtrackstore(BacktrackStore* store, size_t index);
+BacktrackResult* duplicate_backtrack_result_add_space(BacktrackResult* result);
 size_t point_to_index(Point* point);
-char index_to_point(size_t index, Dimensionality* dimensions, Point* p);
+void index_to_point(size_t index, Dimensionality* dimensions, Point* p);
 double evaluate_move(ScoringMatrix* score_matrix, Point* current_point, size_t* next_point_coordinates);
 char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_length);
 DPTable* initialize_dp_table(size_t num_dimensions, size_t length, ScoringMatrix* scoring);

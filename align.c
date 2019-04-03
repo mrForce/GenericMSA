@@ -1,5 +1,30 @@
 #include "align_info.h"
 #include <math.h>
+void backtrack(Alignments*, DPTable*, BacktrackResult*, size_t);
+
+void backtrack(Alignments* alignments, DPTable* table, BacktrackResult* parent_result, size_t index){
+  //duplicate the parent result
+  Point* p = (Point*) malloc(sizeof(Point));
+  p->dimensions = &(table->dimensions);
+  p->coordinates = (size_t*) malloc(sizeof(size_t)*(table->dimensions.num_dimensions));
+  index_to_point(index, &(table->dimensions), p);
+  BacktrackResult* new_result = duplicate_backtrack_result_add_space(parent_result);
+  new_result[parent_result->num_points] = p;
+  if(index == 0){
+    add_to_alignments(new_result, alignments);
+  }else{
+    DPElement element = DPTable->elements[index];
+    assert(element.valid);
+    BacktrackStore backtracks = element.backtrack;
+    assert(backtracks.num_elements > 0);
+    assert(backtracks.array);
+    for(size_t i = 0; i < backtracks.num_elements; i++){
+      backtrack(alignments, table, new_result, point_to_index(backtracks[i]));
+    }
+    //since we copied it in the next backtrack call, we don't need it anymore.
+    free(new_result);
+  }
+}
 
 Alignments* run_alignment(ScoringMatrix* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences){
   /*
@@ -18,12 +43,17 @@ Alignments* run_alignment(ScoringMatrix* scoring, size_t alignment_length, size_
   double scores[recursion_limit - 1];
   char valid_indices[recursion_limit - 1];
   char success;
+  double final_score;
+  char final_score_set = 0;
   //now that we have the DP table, start at index 1 (since 0 has already been filled in!), and loop to the end.
   for(size_t i = 1; i < table->num_elements; i++){
     Point point;
     point.dimensions = dp_dimensions;
     index_to_point(i, dp_dimensions, &point);
-    char valid = location_valid(sequence_sizes, &point, alignment_length);    
+    char valid = location_valid(sequence_sizes, &point, alignment_length);
+    if(i == table->num_elements - 1){
+      assert(valid);
+    }
     if(valid){
       //now loop through the recursion.
       DPElement element = table->elements[i];
@@ -63,18 +93,22 @@ Alignments* run_alignment(ScoringMatrix* scoring, size_t alignment_length, size_
 	*/
 	double max_score = -INFINITY;
 	char max_score_changed = 0;
-	for(unsigned int i = 0; i < recursion_limit; i++){
-	  if(valid_indices[i] && (max_score < scores[i])){
-	    max_score = scores[i];
+	for(unsigned int k = 0; k < recursion_limit; k++){
+	  if(valid_indices[k] && (max_score < scores[k])){
+	    max_score = scores[k];
 	    max_score_changed = 1;
 	  }
 	}
 	assert(max_score_changed);
 	BacktrackStore* store = &(element.backtrack);
-	for(unsigned int i = 0; i < recursion_limit; i++){	  
-	  if(valid_indices[i] && (max_score == scores[i])){
-	    add_to_backtrackstore(store, temp_indices[i]);
+	for(unsigned int k = 0; k < recursion_limit; k++){	  
+	  if(valid_indices[k] && (max_score == scores[k])){
+	    add_to_backtrackstore(store, temp_indices[k]);
 	  }
+	}
+	if(i == table->num_elements - 1){
+	  final_score = max_score;
+	  final_score_set = 1;
 	}
 	
       }
@@ -83,5 +117,15 @@ Alignments* run_alignment(ScoringMatrix* scoring, size_t alignment_length, size_
     }
 
   }
-  
+  assert(final_score_set);
+  Alignments* alignments = (Alignments*) malloc(sizeof(Alignments));
+  alignments->alignments = NULL;
+  alignments->num_alignments = 0;
+  alignments->capacity = 0;
+  alignments->score = final_score;
+  BacktrackResult starting_result;
+  starting_result.points = NULL;
+  starting_result.num_points = 0;
+  backtrack(alignments, table, &starting_result, table->num_elements - 1);
+  return alignments;
 }
