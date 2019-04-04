@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 typedef struct SpatialPointSet_{
   double** coordinates;
   size_t num_points;
