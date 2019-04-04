@@ -18,8 +18,8 @@ typedef struct Dimensionality_{
 
 
 typedef struct ScoringFunction_{
-  double (*score)(void*, size_t*, size_t);
-  void* data;
+  double (*score)(void**, size_t*, size_t);
+  void** data;
 } ScoringFunction;
 
 
