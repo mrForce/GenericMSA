@@ -12,5 +12,5 @@ typedef struct SequencePointSets_{
   size_t length;
 } SequencePointSets;
 
-double sequence_score(SequencePointSets*, size_t*, size_t);
+double sequence_score(SequencePointSets* sps_array, size_t* indices, size_t num_indices);
 
