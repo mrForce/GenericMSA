@@ -75,3 +75,4 @@ double evaluate_move(ScoringFunction*, Point*, size_t*);
 char location_valid(size_t*, Point*, size_t);
 DPTable* initialize_dp_table(Dimensionality*, ScoringFunction*);
 char get_recurse_point(unsigned int, size_t*, size_t*, size_t);
+
