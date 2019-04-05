@@ -78,7 +78,11 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
   */
   Dimensionality* dp_dimensions = (Dimensionality*) malloc(sizeof(Dimensionality));
   dp_dimensions->num_dimensions = num_sequences;
-  dp_dimensions->dimension_sizes = sequence_sizes;
+  size_t* dimension_sizes = (size_t*) malloc(sizeof(size_t)*num_sequences);
+  for(size_t i = 0; i < num_sequences; i++){
+    dimension_sizes[i] = 1 + sequence_sizes[i];
+  }
+  dp_dimensions->dimension_sizes = dimension_sizes;
   DPTable* table = initialize_dp_table(dp_dimensions, scoring);
   /*
     When we recurse, do this.

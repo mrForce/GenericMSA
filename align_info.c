@@ -134,7 +134,7 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scorin
   unsigned int recursion_limit = 0;
   size_t num_elements = 1;
   for(size_t i = 0; i < dimensions->num_dimensions; i++){
-    num_elements *= dimensions->dimension_sizes[i];
+    num_elements *= (1 + dimensions->dimension_sizes[i]);
     recursion_limit *= 2;
   }
   DPTable* table = (DPTable*) malloc(sizeof(DPTable));
@@ -160,6 +160,9 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scorin
     coordinates[i] = 1;
   }
   table->elements[0].score = scoring->score(scoring->data, coordinates, dimensions->num_dimensions);
+  assert(table->elements[0].score == 0.0);
+  //all get gaps, so score is basically undefined.
+  //table->elements[0].score = 0;
   return table;
 }
 
