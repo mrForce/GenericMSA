@@ -152,7 +152,7 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scorin
   /*
     Fill in element (0, 0, ..., 0) of the table. It has index 0.
   */
-  if(mab_sequence_length < alignment_length){ 
+  if(max_sequence_length < alignment_length){ 
     size_t coordinates[dimensions->num_dimensions];
     table->elements[0].valid = 1;
     table->elements[0].score = 0;

@@ -9,15 +9,22 @@ size_t** recover_alignment(BacktrackResult* result, Dimensionality* dimensions, 
   Point** points = result->points;
   Point* last_point = points[0];
   Point* current_point;
+  size_t current_index = result->num_points - 1;
   for(size_t i = 1; i < result->num_points; i++){
     current_point = points[i];
     for(size_t j = 0; j < recovery_length; j++){
       if(last_point->coordinates[j] == current_point->coordinates[j]){
 	//then insert a gap
-	
+	alignment[i][j] = 0;
+      }else{
+	assert(last_point->coordinates[j] > current_point->coordinates[j]);	
+	alignment[i][j] = last_point->coordinates[j];
       }
     }
+    last_point = current_point;
+    current_index--;
   }
+  return alignment;
 }
 
 
@@ -182,8 +189,10 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
   backtrack(alignments, table, &starting_result, table->num_elements - 1);
   return alignments;
 }
-/*
+
 int main(){
+  
+  
   return 0;
 }
-*/
+
