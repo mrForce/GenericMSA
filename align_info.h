@@ -73,6 +73,6 @@ size_t point_to_index(Point*);
 void index_to_point(size_t, Dimensionality*, Point*);
 double evaluate_move(ScoringFunction*, Point*, size_t*);
 char location_valid(size_t*, Point*, size_t);
-DPTable* initialize_dp_table(Dimensionality*, ScoringFunction*);
+DPTable* initialize_dp_table(Dimensionality*, ScoringFunction*, size_t, size_t);
 char get_recurse_point(unsigned int, size_t*, size_t*, size_t);
 

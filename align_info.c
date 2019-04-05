@@ -92,9 +92,9 @@ double evaluate_move(ScoringFunction* score_func, Point* current_point, size_t* 
       coordinates[i] = 0;
     }else{
       /*
-	Since we use 0 to indicate a gap, 
+	Since we added 1 to each axis to allow for normal Needleman-Wunsch table shape, we don't need to add 1 to this anymore.
       */
-      coordinates[i] = next_point_coordinates[i] + 1;
+      coordinates[i] = next_point_coordinates[i];
     }
   }
   
@@ -125,7 +125,8 @@ char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_lengt
   return 1;
 }
 
-DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scoring){
+DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scoring, size_t max_sequence_length, size_t alignment_length){
+  assert(max_sequence_length <= alignment_length);
   assert(sizeof(int) == 4);
   assert(dimensions->num_dimensions <= 32);
   /*
@@ -151,18 +152,11 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scorin
   /*
     Fill in element (0, 0, ..., 0) of the table. It has index 0.
   */
-  table->elements[0].valid = 1;
-  size_t coordinates[dimensions->num_dimensions];
-  /*
-    Calculate the index in the scoring matrix we need.
-   */
-  for(size_t i = 0; i < dimensions->num_dimensions; i++){
-    coordinates[i] = 1;
+  if(mab_sequence_length < alignment_length){ 
+    size_t coordinates[dimensions->num_dimensions];
+    table->elements[0].valid = 1;
+    table->elements[0].score = 0;
   }
-  table->elements[0].score = scoring->score(scoring->data, coordinates, dimensions->num_dimensions);
-  assert(table->elements[0].score == 0.0);
-  //all get gaps, so score is basically undefined.
-  //table->elements[0].score = 0;
   return table;
 }
 
