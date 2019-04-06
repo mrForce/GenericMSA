@@ -97,10 +97,7 @@ double evaluate_move(ScoringFunction* score_func, Point* current_point, size_t* 
       //then gap.
       coordinates[i] = 0;
     }else{
-      /*
-	Since we added 1 to each axis to allow for normal Needleman-Wunsch table shape, we don't need to add 1 to this anymore.
-      */
-      coordinates[i] = next_point_coordinates[i];
+      coordinates[i] = current_point->coordinates[i];
     }
   }
   

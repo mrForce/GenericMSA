@@ -4,22 +4,29 @@
 
 size_t** recover_alignment(BacktrackResult* result, Dimensionality* dimensions, size_t recovery_length){
   size_t** alignment = (size_t**) calloc(dimensions->num_dimensions, sizeof(size_t*));
-  for(size_t i = 0; i < recovery_length; i++){
-    alignment[i] = (size_t*) calloc(recovery_length, sizeof(size_t));
+  
+  for(size_t i = 0; i < dimensions->num_dimensions; i++){
+    *(alignment + i) = (size_t*) calloc(recovery_length + 1, sizeof(size_t));
   }
   Point** points = result->points;
   Point* last_point = points[0];
   Point* current_point;
   size_t current_index = recovery_length - 1;
-  for(size_t i = 1; i < result->num_points; i++){
+  size_t num_points = result->num_points;
+  assert(num_points == recovery_length + 1);
+  for(size_t i = 1; i < num_points; i++){
     current_point = points[i];
     for(size_t j = 0; j < dimensions->num_dimensions; j++){
       if(last_point->coordinates[j] == current_point->coordinates[j]){
 	//then insert a gap
-	alignment[i][j] = 0;
+	alignment[j][num_points - i] = 0;
       }else{
-	assert(last_point->coordinates[j] > current_point->coordinates[j]);	
-	alignment[i][j] = last_point->coordinates[j];
+	if(last_point->coordinates[j] <= current_point->coordinates[j]){
+	  printf("hi%d\n", current_point->coordinates[j]);
+	}
+	assert(last_point->coordinates[j] > current_point->coordinates[j]);
+	printf("Things: %zu, i: %zu, j: %u\n", last_point->coordinates[j], i, j);
+	alignment[j][num_points - i] = last_point->coordinates[j];
       }
     }
     last_point = current_point;
@@ -119,8 +126,8 @@ FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, s
     }
     if(valid){
       //now loop through the recursion.
-      DPElement element = table->elements[i];
-      element.valid = 1;
+      DPElement* element = &(table->elements[i]);
+      element->valid = 1;
       for(unsigned int j = 1; j < recursion_limit; j++){
 	/*
 	  The bits of j tell us which indices to decrement.
@@ -161,15 +168,16 @@ FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, s
 	double max_score = -INFINITY;
 	char max_score_changed = 0;
 	for(unsigned int k = 0; k < recursion_limit - 1; k++){
-	  printf("scores: %d\n", scores[k]);
+	  printf("scores: %f, k: %d\n", scores[k], k);
 	  printf("valid: %d\n", valid_indices[k]);
 	  if(valid_indices[k] && (max_score < scores[k])){
 	    max_score = scores[k];
 	    max_score_changed = 1;
 	  }
 	}
+	element->score = max_score;
 	assert(max_score_changed);
-	BacktrackStore* store = &(element.backtrack);
+	BacktrackStore* store = &(element->backtrack);
 	for(unsigned int k = 0; k < recursion_limit - 1; k++){	  
 	  if(valid_indices[k] && (max_score == scores[k])){
 	    add_to_backtrackstore(store, temp_indices[k]);
@@ -195,6 +203,7 @@ FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, s
   starting_result.num_points = 0;
   backtrack(alignments, table, &starting_result, table->num_elements - 1);
   FinalResults* results = (FinalResults*) malloc(sizeof(FinalResults));
+  results->alignments = (size_t***) malloc(sizeof(size_t**)*(alignments->num_alignments));
   results->num_alignments = alignments->num_alignments;
   for(size_t i = 0; i < alignments->num_alignments; i++){
     results->alignments[i] = recover_alignment(alignments->alignments[i], dp_dimensions, alignment_length);
@@ -209,9 +218,13 @@ typedef struct SequenceData_ {
 
 double test_scoring(SequenceData** data, size_t* coordinates, size_t num_dimensions){
   assert(num_dimensions == 2);
+  if(coordinates[0] == 0 || coordinates[1] == 0){
+    return -1;
+  }
   char* seq_one = (*data)->seq_one;
   char* seq_two = (*data)->seq_two;
-  if(seq_one[coordinates[0]] == seq_two[coordinates[1]]){
+  
+  if(seq_one[coordinates[0] - 1] == seq_two[coordinates[1] - 1]){
     return 1;
   }else{
     return -1;
@@ -233,7 +246,28 @@ int main(){
   size_t alignment_length = 8;
   size_t num_sequences = 2;
   FinalResults* results = run_alignment(&func, alignment_length, sizes, num_sequences);
-
+  for(size_t i = 0; i < results->num_alignments; i++){
+    /*
+      In the shape [num_seq][alignment_length]
+     */
+    size_t** seq_alignments = results->alignments[i];
+    for(size_t j = 0; j < alignment_length; j++){
+      if(seq_alignments[0][j] == 0){
+	printf("-");
+      }else{
+	printf("%c", seq_one[seq_alignments[0][j] - 1]);
+      }
+    }
+    printf("\n");
+    for(size_t j = 0; j < alignment_length; j++){
+      if(seq_alignments[1][j] == 0){
+	printf("-");
+      }else{
+	printf("%c", seq_two[seq_alignments[1][j] - 1]);
+      }
+    }
+    printf("\n");
+  }
   
   return 0;
 }
