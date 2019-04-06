@@ -6,7 +6,7 @@ size_t** recover_alignment(BacktrackResult* result, Dimensionality* dimensions, 
   size_t** alignment = (size_t**) calloc(dimensions->num_dimensions, sizeof(size_t*));
   
   for(size_t i = 0; i < dimensions->num_dimensions; i++){
-    *(alignment + i) = (size_t*) calloc(recovery_length + 1, sizeof(size_t));
+    *(alignment + i) = (size_t*) calloc(recovery_length, sizeof(size_t));
   }
   Point** points = result->points;
   Point* last_point = points[0];
@@ -14,19 +14,23 @@ size_t** recover_alignment(BacktrackResult* result, Dimensionality* dimensions, 
   size_t current_index = recovery_length - 1;
   size_t num_points = result->num_points;
   assert(num_points == recovery_length + 1);
+  for(size_t i = 0; i < num_points - 1; i++){
+    printf("(%zu, %zu)->", points[i]->coordinates[0], points[i]->coordinates[1]);
+  }
+  printf("(%zu, %zu)\n", points[num_points - 1]->coordinates[0], points[num_points - 1]->coordinates[1]);
   for(size_t i = 1; i < num_points; i++){
     current_point = points[i];
     for(size_t j = 0; j < dimensions->num_dimensions; j++){
       if(last_point->coordinates[j] == current_point->coordinates[j]){
 	//then insert a gap
-	alignment[j][num_points - i] = 0;
+	alignment[j][num_points - i - 1] = 0;
       }else{
 	if(last_point->coordinates[j] <= current_point->coordinates[j]){
 	  printf("hi%d\n", current_point->coordinates[j]);
 	}
 	assert(last_point->coordinates[j] > current_point->coordinates[j]);
-	printf("Things: %zu, i: %zu, j: %u\n", last_point->coordinates[j], i, j);
-	alignment[j][num_points - i] = last_point->coordinates[j];
+	printf("Things: %zu, i: %zu, j: %zu, num_points - i - 1: %zu\n", last_point->coordinates[j], i, j, num_points - i - 1);
+	alignment[j][num_points - i - 1] = last_point->coordinates[j];
       }
     }
     last_point = current_point;
