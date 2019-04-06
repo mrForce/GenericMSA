@@ -44,7 +44,7 @@ typedef struct DPElement_ {
 typedef struct DPTable_{
   DPElement* elements;
   size_t num_elements;
-  Dimensionality dimensions;
+  Dimensionality* dimensions;
   //go from 1 up to BUT NOT including recursion_limit.
   unsigned int recursion_limit;
 } DPTable;
@@ -62,7 +62,10 @@ typedef struct Alignments_{
   size_t capacity;
 } Alignments;
 
-
+typedef struct Results_{
+  size_t*** alignments;
+  size_t num_alignments;
+} FinalResults;
 
 
 
@@ -74,10 +77,10 @@ size_t point_to_index(Point*);
 void index_to_point(size_t, Dimensionality*, Point*);
 double evaluate_move(ScoringFunction*, Point*, size_t*);
 char location_valid(size_t*, Point*, size_t);
-DPTable* initialize_dp_table(Dimensionality*, ScoringFunction*,size_t,size_t);
+DPTable* initialize_dp_table(Dimensionality*, ScoringFunction*, size_t, size_t);
 char get_recurse_point(unsigned int, size_t*, size_t*, size_t);
-Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences);""")
-builder.set_source('_align', """#include "align.h" """, sources=['align.c'], libraries=['m'])
+FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences);""")
+builder.set_source('_align', """#include "align.h" """, sources=['align_info.c', 'align.c'], libraries=['m'])
 
 if __name__ == '__main__':
     builder.compile(verbose=True)

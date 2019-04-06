@@ -212,6 +212,10 @@ FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, s
   for(size_t i = 0; i < alignments->num_alignments; i++){
     results->alignments[i] = recover_alignment(alignments->alignments[i], dp_dimensions, alignment_length);
   }
+
+  /*
+    I don't care if this leaks memory!
+   */
   return results;
 }
 

@@ -6,6 +6,7 @@ from scoring_examples.points_distance import make_struct
 
 class Alignment:
     
+    
 """
 
 Example:

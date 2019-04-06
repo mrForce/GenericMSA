@@ -45,7 +45,7 @@ def make_struct(sps_list):
             
 """                
 a = [[[(1, 2), (3, 4)], [(5, 6), (7, 8), (9, 10)]], [[(70, 76), (650, 10)]]]
-b, references = make_struct(a)
+b, func, references = make_struct(a)
 print(b[0])
 print(b[0].spatial_points[0].num_dimensions)
 """
