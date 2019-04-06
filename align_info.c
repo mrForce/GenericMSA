@@ -1,5 +1,5 @@
 #include "align_info.h"
-
+#include <stdio.h>
 
 
 void add_to_backtrackstore(BacktrackStore* store, size_t index){
@@ -69,10 +69,16 @@ void index_to_point(size_t index, Dimensionality* dimensions, Point* p){
     So, to get n_d, we take index % N_d. Then, we divide the index by N_d, which gives is the next term n_{d - 1} + N_{d - 1}(n_{d - 2} + N_{d - 2}(...))
    */
   size_t n, next_term = index, num_dimensions = dimensions->num_dimensions;
-  for(size_t i = num_dimensions - 1; i >= 0; i++){
+  assert(num_dimensions <= 2);
+  size_t i = num_dimensions - 1;
+
+  for(size_t i = num_dimensions - 1; i >= 0; i--){
     p->coordinates[i] = next_term % dimensions->dimension_sizes[i];
     assert(p->coordinates[i] < dimensions->dimension_sizes[i]);
     next_term = next_term/dimensions->dimension_sizes[i];
+    if(i == 0){
+      break;
+    }
   }
 }
 
@@ -118,7 +124,7 @@ char location_valid(size_t* sequence_sizes, Point* point, size_t alignment_lengt
   }
   for(size_t i = 0; i < point->dimensions->num_dimensions; i++){
     size_t num_gaps = max_coordinate - point->coordinates[i];
-    if(num_gaps + point->coordinates[i] > sequence_sizes[i]){
+    if(num_gaps > (alignment_length - sequence_sizes[i])){
       return 0;
     }       
   }
@@ -132,13 +138,14 @@ DPTable* initialize_dp_table(Dimensionality* dimensions, ScoringFunction* scorin
   /*
     We want an unsigned int that's 2^{num_dimensions}
    */
-  unsigned int recursion_limit = 0;
+  unsigned int recursion_limit = 1;
   size_t num_elements = 1;
   for(size_t i = 0; i < dimensions->num_dimensions; i++){
-    num_elements *= (1 + dimensions->dimension_sizes[i]);
+    num_elements *= dimensions->dimension_sizes[i];
     recursion_limit *= 2;
   }
   DPTable* table = (DPTable*) malloc(sizeof(DPTable));
+  table->dimensions = dimensions;
   table->recursion_limit = recursion_limit;
   table->elements = (DPElement*) malloc(sizeof(DPElement)*num_elements);
   table->num_elements = num_elements;
@@ -169,10 +176,11 @@ char get_recurse_point(unsigned int bits, size_t* coordinates, size_t* new_coord
     assert(coordinates[i] >= 0);
     if(bits & (1 << i)){      
       //then we need to subtract 1
-      new_coordinates[i] = coordinates[i] - 1;
-      if(coordinates[i] < 0){
+      if(coordinates[i] == 0){
 	return 0;
-      }      
+      }
+      new_coordinates[i] = coordinates[i] - 1;
+
     }else{
       new_coordinates[i] = coordinates[i];
     }

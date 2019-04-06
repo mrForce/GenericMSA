@@ -43,7 +43,7 @@ typedef struct DPElement_ {
 typedef struct DPTable_{
   DPElement* elements;
   size_t num_elements;
-  Dimensionality dimensions;
+  Dimensionality* dimensions;
   //go from 1 up to BUT NOT including recursion_limit.
   unsigned int recursion_limit;
 } DPTable;
@@ -61,7 +61,10 @@ typedef struct Alignments_{
   size_t capacity;
 } Alignments;
 
-
+typedef struct Results_{
+  size_t*** alignments;
+  size_t num_alignments;
+} FinalResults;
 
 
 

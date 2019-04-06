@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I. -lm
+CFLAGS=-I. -lm -g
 DEPS = align_info.h
 OBJ = align_info.o align.o 
 

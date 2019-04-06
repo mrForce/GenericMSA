@@ -1,4 +1,5 @@
 #include "align.h"
+#include <string.h>
 #include <math.h>
 
 size_t** recover_alignment(BacktrackResult* result, Dimensionality* dimensions, size_t recovery_length){
@@ -9,10 +10,10 @@ size_t** recover_alignment(BacktrackResult* result, Dimensionality* dimensions, 
   Point** points = result->points;
   Point* last_point = points[0];
   Point* current_point;
-  size_t current_index = result->num_points - 1;
+  size_t current_index = recovery_length - 1;
   for(size_t i = 1; i < result->num_points; i++){
     current_point = points[i];
-    for(size_t j = 0; j < recovery_length; j++){
+    for(size_t j = 0; j < dimensions->num_dimensions; j++){
       if(last_point->coordinates[j] == current_point->coordinates[j]){
 	//then insert a gap
 	alignment[i][j] = 0;
@@ -57,9 +58,9 @@ void backtrack(Alignments*, DPTable*, BacktrackResult*, size_t);
 void backtrack(Alignments* alignments, DPTable* table, BacktrackResult* parent_result, size_t index){
   //duplicate the parent result
   Point* p = (Point*) malloc(sizeof(Point));
-  p->dimensions = &(table->dimensions);
-  p->coordinates = (size_t*) malloc(sizeof(size_t)*(table->dimensions.num_dimensions));
-  index_to_point(index, &(table->dimensions), p);
+  p->dimensions = table->dimensions;
+  p->coordinates = (size_t*) malloc(sizeof(size_t)*(table->dimensions->num_dimensions));
+  index_to_point(index, table->dimensions, p);
   BacktrackResult* new_result = duplicate_backtrack_result_add_space(parent_result);
   new_result->points[parent_result->num_points] = p;
   if(index == 0){
@@ -78,7 +79,7 @@ void backtrack(Alignments* alignments, DPTable* table, BacktrackResult* parent_r
   }
 }
 
-Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences){
+FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences){
   /*
     Note: for each element in sequence_sizes, alignment_length - sequences_size is the number of gaps that need to be inserted into it.
 
@@ -107,10 +108,12 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
   char final_score_set = 0;
   //now that we have the DP table, start at index 1 (since 0 has already been filled in!), and loop to the end.
   for(size_t i = 1; i < table->num_elements; i++){
-    Point point;
-    point.dimensions = dp_dimensions;
-    index_to_point(i, dp_dimensions, &point);
-    char valid = location_valid(sequence_sizes, &point, alignment_length);
+    size_t thing = sizeof(Point);
+    Point* point = (Point*) malloc(sizeof(Point));
+    point->dimensions = dp_dimensions;
+    point->coordinates = (size_t*) malloc(sizeof(size_t)*dp_dimensions->num_dimensions);
+    index_to_point(i, dp_dimensions, point);
+    char valid = location_valid(sequence_sizes, point, alignment_length);
     if(i == table->num_elements - 1){
       assert(valid);
     }
@@ -124,18 +127,19 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
 	 */
 	size_t temp_coordinates[num_sequences];
 	//set up the coordinates
-	char success = get_recurse_point(j, point.coordinates, temp_coordinates, num_sequences);
+	char success = get_recurse_point(j, point->coordinates, temp_coordinates, num_sequences);
 	if(success){
-	  Point temp_point;
-	  temp_point.coordinates = temp_coordinates;
-	  temp_point.dimensions = dp_dimensions;
-	  size_t temp_index = point_to_index(&temp_point);
+	  Point* temp_point = (Point*) malloc(sizeof(Point));
+	  temp_point->coordinates = temp_coordinates;
+	  temp_point->dimensions = dp_dimensions;
+	  size_t temp_index = point_to_index(temp_point);
+	  table->elements[temp_index].valid = location_valid(sequence_sizes, temp_point, alignment_length);
 	  if(table->elements[temp_index].valid){
 	    /*
 	      We add the score stored in the element to the one calculated by evaluate_move
 	     */
 	    valid_indices[j - 1] = 1;
-	    double temp_score = table->elements[temp_index].score + evaluate_move(scoring, &point, temp_coordinates);
+	    double temp_score = table->elements[temp_index].score + evaluate_move(scoring, point, temp_coordinates);
 	    scores[j - 1] = temp_score;
 	    temp_indices[j - 1] = temp_index;
 	  }else{
@@ -145,15 +149,20 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
 	  }
 	  
 	  
+	}else{
+	  valid_indices[j-1] = 0;
+	  scores[j - 1] = 0;
 	}
-
+      }
 	/* 
 	   Now we've evaluated all possible recursions, we need to go through them and find out the max score. 
 	   Then, loop through them once more, and add the ones with score equal to the max to the backtracking store
 	*/
 	double max_score = -INFINITY;
 	char max_score_changed = 0;
-	for(unsigned int k = 0; k < recursion_limit; k++){
+	for(unsigned int k = 0; k < recursion_limit - 1; k++){
+	  printf("scores: %d\n", scores[k]);
+	  printf("valid: %d\n", valid_indices[k]);
 	  if(valid_indices[k] && (max_score < scores[k])){
 	    max_score = scores[k];
 	    max_score_changed = 1;
@@ -161,7 +170,7 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
 	}
 	assert(max_score_changed);
 	BacktrackStore* store = &(element.backtrack);
-	for(unsigned int k = 0; k < recursion_limit; k++){	  
+	for(unsigned int k = 0; k < recursion_limit - 1; k++){	  
 	  if(valid_indices[k] && (max_score == scores[k])){
 	    add_to_backtrackstore(store, temp_indices[k]);
 	  }
@@ -170,12 +179,10 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
 	  final_score = max_score;
 	  final_score_set = 1;
 	}
-	
-      }
-    } else{
+    }else{
       table->elements[i].valid = 0;
     }
-
+	
   }
   assert(final_score_set);
   Alignments* alignments = (Alignments*) malloc(sizeof(Alignments));
@@ -187,11 +194,46 @@ Alignments* run_alignment(ScoringFunction* scoring, size_t alignment_length, siz
   starting_result.points = NULL;
   starting_result.num_points = 0;
   backtrack(alignments, table, &starting_result, table->num_elements - 1);
-  return alignments;
+  FinalResults* results = (FinalResults*) malloc(sizeof(FinalResults));
+  results->num_alignments = alignments->num_alignments;
+  for(size_t i = 0; i < alignments->num_alignments; i++){
+    results->alignments[i] = recover_alignment(alignments->alignments[i], dp_dimensions, alignment_length);
+  }
+  return results;
+}
+
+typedef struct SequenceData_ {
+  char* seq_one;
+  char* seq_two;
+} SequenceData;
+
+double test_scoring(SequenceData** data, size_t* coordinates, size_t num_dimensions){
+  assert(num_dimensions == 2);
+  char* seq_one = (*data)->seq_one;
+  char* seq_two = (*data)->seq_two;
+  if(seq_one[coordinates[0]] == seq_two[coordinates[1]]){
+    return 1;
+  }else{
+    return -1;
+  }
 }
 
 int main(){
-  
+  char* seq_one = "GCATGCU";
+  char* seq_two = "GATTACA";
+  SequenceData* store = (SequenceData*) malloc(sizeof(SequenceData));
+  store->seq_one = seq_one;
+  store->seq_two = seq_two;
+  ScoringFunction func;
+  func.data = (void**) &store;
+  func.score = (double (*)(void**, size_t*, size_t))&(test_scoring);
+  size_t sizes[2];
+  sizes[0] = strlen(seq_one);
+  sizes[1] = strlen(seq_two);
+  size_t alignment_length = 8;
+  size_t num_sequences = 2;
+  FinalResults* results = run_alignment(&func, alignment_length, sizes, num_sequences);
+
   
   return 0;
 }
