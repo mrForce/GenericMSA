@@ -1,3 +1,4 @@
+
 #include <stddef.h>
 
 typedef struct SpatialPointSet_{

@@ -80,7 +80,7 @@ char location_valid(size_t*, Point*, size_t);
 DPTable* initialize_dp_table(Dimensionality*, ScoringFunction*, size_t, size_t);
 char get_recurse_point(unsigned int, size_t*, size_t*, size_t);
 FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, size_t* sequence_sizes, size_t num_sequences);""")
-builder.set_source('_align', """#include "align.h" """, sources=['align_info.c', 'align.c'], libraries=['m'])
+builder.set_source('_align', """#include "align.h" """, sources=['align_info.c', 'align.c'], libraries=['m'], extra_compile_args=['-g', '-O0'])
 
 if __name__ == '__main__':
     builder.compile(verbose=True)

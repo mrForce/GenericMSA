@@ -1,25 +1,30 @@
 #include "align.h"
 #include <string.h>
 #include <math.h>
+#undef NDEBUG
+#include <assert.h>
 
 size_t** recover_alignment(BacktrackResult* result, Dimensionality* dimensions, size_t recovery_length){
-  size_t** alignment = (size_t**) calloc(dimensions->num_dimensions, sizeof(size_t*));
+  printf("num dimensions: %zu\n", dimensions->num_dimensions);
+  size_t** alignment = (size_t**) malloc((dimensions->num_dimensions)*sizeof(size_t*));
   
   for(size_t i = 0; i < dimensions->num_dimensions; i++){
-    *(alignment + i) = (size_t*) calloc(recovery_length, sizeof(size_t));
+    alignment[i] = (size_t*) malloc(recovery_length*sizeof(size_t));
   }
   Point** points = result->points;
   Point* last_point = points[0];
   Point* current_point;
   size_t current_index = recovery_length - 1;
   size_t num_points = result->num_points;
-  assert(num_points == recovery_length + 1);
   for(size_t i = 0; i < num_points - 1; i++){
-    printf("(%zu, %zu)->", points[i]->coordinates[0], points[i]->coordinates[1]);
+    fprintf(stderr, "(%zu, %zu, %zu)->", points[i]->coordinates[0], points[i]->coordinates[1], points[i]->coordinates[2]);
   }
-  printf("(%zu, %zu)\n", points[num_points - 1]->coordinates[0], points[num_points - 1]->coordinates[1]);
+  fprintf(stderr, "(%zu, %zu, %zu)\n", points[num_points - 1]->coordinates[0], points[num_points - 1]->coordinates[1], points[num_points - 1]->coordinates[2]);
+  assert(num_points == recovery_length + 1);
   for(size_t i = 1; i < num_points; i++){
     current_point = points[i];
+    assert(num_points - i - 1 < recovery_length);
+    fprintf(stderr, "i: %zu, num_points: %zu, Num points thing: %zu, recovery length: %zu\n", i, num_points, num_points - i - 1, recovery_length);
     for(size_t j = 0; j < dimensions->num_dimensions; j++){
       if(last_point->coordinates[j] == current_point->coordinates[j]){
 	//then insert a gap
@@ -209,9 +214,14 @@ FinalResults* run_alignment(ScoringFunction* scoring, size_t alignment_length, s
   FinalResults* results = (FinalResults*) malloc(sizeof(FinalResults));
   results->alignments = (size_t***) malloc(sizeof(size_t**)*(alignments->num_alignments));
   results->num_alignments = alignments->num_alignments;
+  int num_good_alignments = 0;
   for(size_t i = 0; i < alignments->num_alignments; i++){
-    results->alignments[i] = recover_alignment(alignments->alignments[i], dp_dimensions, alignment_length);
+    if(alignments->alignments[i]->num_points  == alignment_length + 1){
+      num_good_alignments++;
+      results->alignments[i] = recover_alignment(alignments->alignments[i], dp_dimensions, alignment_length);
+    }
   }
+  fprintf(stderr, "num good aligments: %d\n", num_good_alignments);
 
   /*
     I don't care if this leaks memory!
@@ -240,8 +250,8 @@ double test_scoring(SequenceData** data, size_t* coordinates, size_t num_dimensi
 }
 
 int main(){
-  char* seq_one = "GCATGCU";
-  char* seq_two = "GATTACA";
+  char* seq_one = "GAAC";
+  char* seq_two = "CAAGAC";
   SequenceData* store = (SequenceData*) malloc(sizeof(SequenceData));
   store->seq_one = seq_one;
   store->seq_two = seq_two;
@@ -251,7 +261,7 @@ int main(){
   size_t sizes[2];
   sizes[0] = strlen(seq_one);
   sizes[1] = strlen(seq_two);
-  size_t alignment_length = 8;
+  size_t alignment_length = 6;
   size_t num_sequences = 2;
   FinalResults* results = run_alignment(&func, alignment_length, sizes, num_sequences);
   for(size_t i = 0; i < results->num_alignments; i++){

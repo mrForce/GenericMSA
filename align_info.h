@@ -1,7 +1,8 @@
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
+#undef NDEBUG
+#include <assert.h>
 typedef struct BacktrackStore_{
   
   size_t* array;

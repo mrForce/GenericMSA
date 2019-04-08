@@ -29,6 +29,7 @@ double sequence_score(SequencePointSets** sps_array, size_t* indices, size_t num
   //use the recursive mean to avoid numerical error.
   double mean = 0;
   size_t n = 1;
+
   for(size_t i = 0; i < num_indices - 1; i++){
     for(size_t j = i + 1; j < num_indices; j++){
       if(indices[i] > 0 && indices[j] > 0){
@@ -58,7 +59,10 @@ double sequence_score(SequencePointSets** sps_array, size_t* indices, size_t num
       }
     }
   }
-  return mean;
+  for(size_t i = 0; i < num_indices; i++){
+    mean += 1000.0;
+  }
+  return -1*mean;
 }
 /*
 int main(){

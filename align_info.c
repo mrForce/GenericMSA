@@ -69,7 +69,6 @@ void index_to_point(size_t index, Dimensionality* dimensions, Point* p){
     So, to get n_d, we take index % N_d. Then, we divide the index by N_d, which gives is the next term n_{d - 1} + N_{d - 1}(n_{d - 2} + N_{d - 2}(...))
    */
   size_t n, next_term = index, num_dimensions = dimensions->num_dimensions;
-  assert(num_dimensions <= 2);
   size_t i = num_dimensions - 1;
 
   for(size_t i = num_dimensions - 1; i >= 0; i--){
@@ -100,8 +99,16 @@ double evaluate_move(ScoringFunction* score_func, Point* current_point, size_t* 
       coordinates[i] = current_point->coordinates[i];
     }
   }
+  /*
+    This is a quick patch to fix the fact that the scoring function I made is mis-aligned with this program. We need to reverse coordinates.
+   */
+  size_t reversed_coordinates[num_dimensions];
+  for(size_t i = 0; i < num_dimensions; i++){
+    reversed_coordinates[num_dimensions - i - 1] = coordinates[i];
+  }
+
   
-  double score = score_func->score(score_func->data, coordinates, num_dimensions);
+  double score = score_func->score(score_func->data, reversed_coordinates, num_dimensions);
   return score;
 }
 

@@ -17,7 +17,7 @@ typedef struct SequencePointSets_{
 SpatialPointSet get_spatial_ps(double** coordinates, size_t num_points, size_t num_dimensions);
 double sequence_score(SequencePointSets** sps_array, size_t* indices, size_t num_indices);""")
 
-builder.set_source('_score', """#include "points_distance.h" """, sources=['points_distance.c'], libraries=['m'])
+builder.set_source('_score', """#include "points_distance.h" """, sources=['points_distance.c'], libraries=['m'], extra_compile_args=['-g', '-O0'])
 
 if __name__ == '__main__':
     builder.compile(verbose=True)
